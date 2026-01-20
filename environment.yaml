@@ -1,0 +1,32 @@
+name: pruning_env
+channels:
+  - pytorch
+  - nvidia
+  - defaults
+dependencies:
+  # --- Core Environment ---
+  - python=3.11
+  - pip
+
+  # --- PyTorch ecosystem (with CUDA 12.1) ---
+  - pytorch
+  - torchvision
+  - pytorch-cuda=12.1
+
+  # --- Data Science & Math ---
+  - scipy           # REQUIRED for Oxford 102 dataset
+  - numpy
+  - pandas
+  - matplotlib
+  - scikit-learn
+  - seaborn
+
+  # --- Notebooks ---
+  - ipykernel
+  - notebook
+
+  # --- Pip-specific packages ---
+  - pip:
+      - wandb       # Weights & Biases
+      - pyyaml      # Config management
+      - tqdm        # Progress bars
