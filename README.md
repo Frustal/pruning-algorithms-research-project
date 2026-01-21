@@ -1,12 +1,12 @@
 # pruning-algorithms-research-project
 
-This project investigates the efficacy of pruning algorithms such as Iterative Magnitude Pruning (IMP) and Signle-Shot Network Pruning (SNIP) in reducing the size of a ResNet-18 model while trying to maintain classification accuracy on the Oxford Flowers-102 fine-grained classification dataset.
+This project investigates the efficacy of pruning algorithms such as Iterative Magnitude Pruning (IMP) [1] and Signle-Shot Network Pruning (SNIP) [2] in reducing the size of a ResNet-18 model while trying to maintain classification accuracy on the Oxford Flowers-102 fine-grained classification dataset.
 
 The framework is designed to be extensible for other pruning methods and experiments.
 
 ## Main Results
-
-*(Figure 1: Test Accuracy vs. Parameter Count. The dot represents the unpruned ResNet18 model (~11.2M params). The lines shows the performance retention of IMP/SNIP across sparsity levels)*
+![Pruning Trade-off](final_results.png)
+*(Figure 1: Test Accuracy vs. Parameter Count. The dot represents the unpruned ResNet18 model (~11.2M params). The lines shows the performance of IMP across sparsity levels)*
 
 ## Setup
 
@@ -104,6 +104,13 @@ python clear_outputs.py
 ├── environment.yaml        # Conda environment definition
 └── clear_outputs.py        # Utility to clear output directories
 ```
+## References
+
+[1] Song Han, Jeff Pool, John Tran, and William J. Dally. Learning both Weights and Connections for Efficient
+Neural Networks. In Advances in Neural Information Processing Systems (NeurIPS), 2015, pp. 1135–1143.
+[2] Namhoon Lee, Thalaiyasingam Ajanthan, and Philip H. S. Torr. SNIP: Single-shot Network Pruning based
+on Connection Sensitivity. In Proceedings of the 7th International Conference on Learning Representations
+(ICLR), 2019, pp. 1-15.
 
 ## License
 
