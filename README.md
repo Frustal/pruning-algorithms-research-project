@@ -1,4 +1,5 @@
 # pruning-algorithms-research-project
+Currently under development
 
 This project investigates the efficacy of pruning algorithms such as Iterative Magnitude Pruning (IMP) [1] and Signle-Shot Network Pruning (SNIP) [2] in reducing the size of a ResNet-18 model while trying to maintain classification accuracy on the Oxford Flowers-102 fine-grained classification dataset.
 
