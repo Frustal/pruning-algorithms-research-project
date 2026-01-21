@@ -6,6 +6,7 @@ The framework is designed to be extensible for other pruning methods and experim
 
 ## Main Results
 ![Pruning Trade-off](final_results.png)
+
 *(Figure 1: Test Accuracy vs. Parameter Count. The dot represents the unpruned ResNet18 model (~11.2M params). The lines shows the performance of IMP across sparsity levels)*
 
 ## Setup
@@ -108,6 +109,7 @@ python clear_outputs.py
 
 [1] Song Han, Jeff Pool, John Tran, and William J. Dally. Learning both Weights and Connections for Efficient
 Neural Networks. In Advances in Neural Information Processing Systems (NeurIPS), 2015, pp. 1135–1143.
+
 [2] Namhoon Lee, Thalaiyasingam Ajanthan, and Philip H. S. Torr. SNIP: Single-shot Network Pruning based
 on Connection Sensitivity. In Proceedings of the 7th International Conference on Learning Representations
 (ICLR), 2019, pp. 1-15.
