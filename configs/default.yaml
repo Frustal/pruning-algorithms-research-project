@@ -1,0 +1,18 @@
+experiment_name: "default"
+seed: 42
+
+data:
+  batch_size: 64
+  num_workers: 0 
+
+model:
+  pretrained: True
+  checkpoint: null
+
+method: "default"
+
+training:
+  epochs: 5
+  lr: 0.001
+  device: "cuda"
+  save_dir: "output/models"
