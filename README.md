@@ -1,111 +1,121 @@
-# pruning-algorithms-research-project
-Currently under development
+# Pruning Algorithms Research Project
 
-This project investigates the efficacy of pruning algorithms such as Iterative Magnitude Pruning (IMP) [1] and Signle-Shot Network Pruning (SNIP) [2] in reducing the size of a ResNet-18 model while trying to maintain classification accuracy on the Oxford Flowers-102 fine-grained classification dataset.
+This project investigates whether **pruning a large model (ResNet-50)** is fundamentally more effective than natively training smaller architectures (ResNet-34, ResNet-18). It evaluates the efficacy of two distinct pruning algorithms on the Oxford Flowers-102 classification dataset: Iterative Magnitude Pruning (IMP) [1] and Single-Shot Network Pruning (SNIP) [2].
 
-The framework is designed to be extensible for other pruning methods and experiments.
+## Main Results & Insights
 
-## Main Results
 ![Pruning Trade-off](final_results.png)
 
-*(Figure 1: Test Accuracy vs. Parameter Count. The dot represents the unpruned ResNet18 model (~11.2M params). The lines shows the performance of IMP across sparsity levels)*
+*(Figure 1: Test Accuracy vs. Parameter Count. The black dashed line represents the Dense Baselines (ResNet-18, 34, 50). The solid lines show the performance trajectories of IMP and SNIP applied to ResNet-50 across 11 sparsity levels.)*
+
+### Critical Analysis of the Results
+1. **Pruning Beats Naive Downscaling**: The plot clearly shows that an Iteratively Pruned ResNet-50 (IMP) can be compressed down to ~3.5M parameters while still maintaining ~89% accuracy. In contrast, the natively trained ResNet-18 (~11M parameters) achieves roughly ~90% accuracy. By tracking the parameter counts on the X-axis, we see that the pruned network consistently matches or outperforms the naively downscaled dense models at equivalent sizes.
+2. **Why do Pruned Models Perform So Well?**: The Oxford Flowers-102 dataset is very small (only 1,020 training images). A dense ResNet-50 (25M parameters) is massively overparameterized for this task, which naturally leads to extreme mathematical redundancy and a tendency to overfit (which explains why the mid-sized ResNet-34 actually outperformed it). However, because ResNet-50 starts with massive capacity and highly expressive pretrained features, pruning successfully strips away this redundancy while keeping the crucial feature-extracting weights intact.
+3. **IMP vs. SNIP**: While SNIP is highly efficient (requiring only a single training run per target), it collapses at extreme sparsities (dropping to ~74% accuracy at 3.5M parameters). IMP remains incredibly robust, proving that the iterative retraining is strictly necessary for finding highly compressed sub-networks.
+
+### A Note on Unstructured Pruning
+This project utilizes **Unstructured Pruning**. This means individual weights are masked to exactly `0.0` rather than structurally removing entire convolutional channels.
+
+## Pruning Methods Detailed
+
+1. **Iterative Magnitude Pruning (IMP)**
+   IMP is a progressive, step-by-step pruning strategy. The pipeline works by:
+   - **Phase 1**: Training a dense network to convergence.
+   - **Phase 2**: Pruning a percentage of the weights with the lowest absolute magnitude.
+   - **Phase 3**: Retraining the network for a short duration.
+   - This process (Phases 2 & 3) is repeated iteratively to reach the desired level of sparsity.
+
+2. **Single-Shot Network Pruning (SNIP)**
+   SNIP is a "pruning at initialization" method:
+   - Before training begins, it passes a small batch of data through the dense, initialized network to compute gradients.
+   - It calculates the "Connection Sensitivity" of each weight by multiplying its magnitude by its gradient ($|w \times \nabla w|$).
+   - Weights with the lowest sensitivity are masked permanently.
+   - The remaining sparse network is then trained from scratch.
 
 ## Setup
 
-The project uses Conda to manage its environment.
+The project uses `uv` (recommended) or Conda to manage its environment dependencies.
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/frustal/pruning-algorithms-research-project.git
-    cd pruning-algorithms-research-project
-    ```
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/frustal/pruning-algorithms-research-project.git
+   cd pruning-algorithms-research-project
+   ```
 
-2.  **Create and activate the Conda environment:**
-    ```bash
-    conda env create -f environment.yaml
-    conda activate pruning_env
-    ```
+2. **Install dependencies:**
+   
+   **Using `uv` (Fastest):**
+   ```bash
+   uv venv
+   # On Windows:
+   .\.venv\Scripts\activate
+   # On Unix:
+   source .venv/bin/activate
+   
+   uv pip install -r requirements.txt
+   # or
+   uv sync
+   ```
+   
+   *Alternatively, using Conda:*
+   ```bash
+   conda env create -f environment.yaml
+   conda activate pruning_env
+   ```
 
-3.  **Dataset:** The Flowers-102 dataset will be automatically downloaded to a `data/` directory the first time you run an experiment.
+3. **Dataset:** The Flowers-102 dataset will be automatically downloaded to a `data/` directory the first time you run an experiment.
 
 ## Usage
 
 Experiments are managed through YAML configuration files located in the `configs/` directory.
 
-### Running Experiments
-
-To run an experiment, use the `train.py` script and specify a configuration file.
-
-**1. Default Training (Dense Model)**
-
-This runs a standard training loop without any pruning.
+### 1. Train Dense Baselines
+Establish the "Dense Baselines" curve by training the standard ResNet architectures.
 ```bash
-python train.py --config configs/default.yaml
+python train.py --config configs/default_r18.yaml
+python train.py --config configs/default_r34.yaml
+python train.py --config configs/default_r50.yaml
 ```
 
-**2. Iterative Magnitude Pruning (IMP)**
-
-This runs the full IMP pipeline:
-- **Phase 1:** Train a dense model to convergence.
-- **Phase 2:** Prune the model globally based on weight magnitude to various sparsity targets.
-- **Phase 3:** Retrain the pruned model for a few epochs.
+### 2. Run Pruning Algorithms
+Run IMP and SNIP on the ResNet-50 model. The configurations are set to sweep across 11 sparsity targets (from 5% down to 85% remaining weights) to accurately plot the degradation curve.
 
 ```bash
-python train.py --config configs/imp.yaml
+python train.py --config configs/imp_r50.yaml
+python train.py --config configs/snip_r50.yaml
 ```
 
-**Debug Mode**
-
-For quick tests, you can use the `--debug` flag. This will run the experiment for only one epoch on a small subset of the data.
+### 3. Plotting Results
+Generate a comparative plot of test accuracy versus parameter count.
 ```bash
-python train.py --config configs/imp.yaml --debug
+python plot_results.py --experiments default_r18 default_r34 default_r50 imp_r50 snip_r50
 ```
-
-### Experiment Outputs
-
--   **Trained Models:** Model weights (`.pth` files) are saved in `output/models/`.
--   **Logs & Metrics:** Results such as accuracy, sparsity, and parameter count are logged to `output/logs/<experiment_name>/metrics.csv`.
-
-### Plotting Results
-
-After running your experiments, you can generate a comparative plot of test accuracy versus model size (in millions of parameters).
-
-The `plot_results.py` script reads the `metrics.csv` files from the specified experiments.
-
-```bash
-# Example: Compare the default run with the IMP run
-python plot_results.py --experiments default imp_baseline
-```
-
-This will save a `final_results.png` image in the root directory.
+This saves `final_results.png` to the project root.
 
 ### Cleaning Outputs
-
-A utility script is provided to clear all generated logs and models, allowing for a fresh run.
-
+To clear all generated logs and models and start fresh:
 ```bash
 python clear_outputs.py
 ```
 
 ## Project Structure
-
-```
+```text
 .
-├── configs/                # YAML configuration files for experiments
-│   ├── default.yaml        # Config for standard dense training
-│   └── imp.yaml            # Config for Iterative Magnitude Pruning
-├── src/                    # Source code
-│   ├── data.py             # Dataloaders for the Flowers-102 dataset
-│   ├── model.py            # ResNet-18 model definition
-│   ├── utils.py            # Helper functions (seeding, logging)
-│   └── methods/            # Implementations of training/pruning methods
-│       ├── default.py      # Standard training loop
-│       └── imp.py          # IMP training, pruning, and retraining loop
-├── train.py                # Main script to launch experiments
-├── plot_results.py         # Script to generate comparison plots
-├── environment.yaml        # Conda environment definition
-└── clear_outputs.py        # Utility to clear output directories
+├── configs/                # YAML configs (baselines & pruning)
+├── src/                    
+│   ├── data.py             # Dataloaders for Flowers-102
+│   ├── model.py            # ResNet factory functions
+│   ├── utils.py            # CSV Logger and helpers
+│   └── methods/            
+│       ├── default.py      # Standard dense training
+│       ├── imp.py          # IMP logic
+│       └── snip.py         # SNIP logic
+├── train.py                # Main experiment execution script
+├── plot_results.py         # Matplotlib generation
+├── requirements.txt        # Python dependencies
+└── clear_outputs.py        # Utility to wipe logs/models
 ```
+
 ## References
 
 [1] Song Han, Jeff Pool, John Tran, and William J. Dally. Learning both Weights and Connections for Efficient
@@ -116,5 +126,4 @@ on Connection Sensitivity. In Proceedings of the 7th International Conference on
 (ICLR), 2019, pp. 1-15.
 
 ## License
-
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
