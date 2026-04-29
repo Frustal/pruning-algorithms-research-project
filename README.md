@@ -20,10 +20,10 @@ This project utilizes **Unstructured Pruning**. This means individual weights ar
 
 1. **Iterative Magnitude Pruning (IMP)**
    IMP is a progressive, step-by-step pruning strategy. The pipeline works by:
-   - **Phase 1**: Training a dense network to convergence.
-   - **Phase 2**: Pruning a percentage of the weights with the lowest absolute magnitude.
-   - **Phase 3**: Retraining the network for a short duration.
-   - This process (Phases 2 & 3) is repeated iteratively to reach the desired level of sparsity.
+   - Training a dense network to convergence.
+   - Pruning a percentage of the weights with the lowest absolute magnitude.
+   - Retraining the network for a short duration.
+   - This process (Pruning & Retraining) is repeated iteratively to reach the desired level of sparsity.
 
 2. **Single-Shot Network Pruning (SNIP)**
    SNIP is a "pruning at initialization" method:
