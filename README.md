@@ -102,6 +102,7 @@ python clear_outputs.py
 ```text
 .
 ├── configs/                # YAML configs (baselines & pruning)
+├── output/                 # Generated models (.pth) and logs (.csv)
 ├── src/                    
 │   ├── data.py             # Dataloaders for Flowers-102
 │   ├── model.py            # ResNet factory functions
