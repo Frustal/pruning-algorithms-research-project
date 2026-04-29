@@ -42,12 +42,14 @@ def run(config, model, loaders, logger):
     
     # phase 1: initial training
     print(f"Starting Default Training for {config['training']['epochs']} epochs...")
-    optimizer = torch.optim.SGD(model.parameters(), lr=config['training']['lr'], momentum=0.9)
+    optimizer = torch.optim.SGD(model.parameters(), lr=config['training']['lr'], momentum=0.9, weight_decay=1e-4)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=config['training']['epochs'])
     best_base_acc = 0.0
     best_base_wts = copy.deepcopy(model.state_dict())
 
     for epoch in range(1, config['training']['epochs'] + 1):
         train_one_epoch(model, loaders['train'], criterion, optimizer, device)
+        scheduler.step()
         val_acc = evaluate(model, loaders['val'], device)
 
         print(f"Epoch {epoch} | Val Acc: {val_acc:.2%}")
@@ -58,22 +60,24 @@ def run(config, model, loaders, logger):
             
     print(f"Base Training Complete. Best Val: {best_base_acc:.2%}")
     
-    dense_model_state = copy.deepcopy(best_base_wts)
+    current_state = copy.deepcopy(best_base_wts)
     
     for sparsity in config['pruning']['targets']:
         # phase 2: pruning
         print(f"\n--- Pruning to Target: {sparsity:.0%} ---")
         
-        model.load_state_dict(dense_model_state)
+        # Load the state from the previous iteration (or base model for the first)
+        model.load_state_dict(current_state)
         
         masks, active_params = prune_model(model, sparsity, device)
         
         # phase 3: retrain
-        optimizer = torch.optim.SGD(model.parameters(), lr=config['training']['lr'], momentum=0.9)
+        optimizer = torch.optim.SGD(model.parameters(), lr=config['training']['lr'], momentum=0.9, weight_decay=1e-4)
         best_sparse_acc = 0.0
         best_sparse_wts = copy.deepcopy(model.state_dict())
         
         epochs = config['pruning']['retrain_epochs']
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
         for epoch in range(1, epochs + 1):
             model.train()
             for images, labels in tqdm(loaders['train'], desc="Retraining", leave=False):
@@ -89,10 +93,11 @@ def run(config, model, loaders, logger):
                         if name in masks:
                             m.weight.data.mul_(masks[name])
                             
+            scheduler.step()
             # validation
+            val_acc = evaluate(model, loaders['val'], device)
             print(f"Epoch {epoch} | Val Acc: {val_acc:.2%}")
             
-            val_acc = evaluate(model, loaders['val'], device)
             if val_acc > best_sparse_acc:
                 best_sparse_acc = val_acc
                 best_sparse_wts = copy.deepcopy(model.state_dict())
@@ -114,3 +119,6 @@ def run(config, model, loaders, logger):
         })
         torch.save(model.state_dict(), save_dir / f"{config['experiment_name']}_sp{int(sparsity*100)}.pth")
         print(f"Result {sparsity:.0%} | Test Acc: {test_acc:.2%}")
+        
+        # Update current_state for the next iteration to make it truly iterative
+        current_state = copy.deepcopy(model.state_dict())

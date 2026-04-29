@@ -9,7 +9,10 @@ def plot_experiments(experiments):
     sns.set_style("whitegrid")
     colors = sns.color_palette("colorblind")
 
-    for idx, name in enumerate(experiments):
+    default_dfs = []
+    other_experiments = []
+
+    for name in experiments:
         path = Path(f"output/logs/{name}/metrics.csv")
         if not path.exists(): continue
         
@@ -19,8 +22,18 @@ def plot_experiments(experiments):
         acc_col = "test_acc" if "test_acc" in df.columns else "val_acc"
         df = df.groupby("params")[acc_col].max().reset_index()
         df["params_mil"] = df["params"] / 1e6
-        df = df.sort_values("params_mil", ascending=False)
+        
+        if name.startswith("default"):
+            default_dfs.append(df)
+        else:
+            other_experiments.append((name, df))
 
+    if default_dfs:
+        default_df = pd.concat(default_dfs).sort_values("params_mil", ascending=False)
+        plt.plot(default_df["params_mil"], default_df[acc_col], marker='o', markersize=6, linestyle='--', color='black', label="Dense Baselines", zorder=5)
+
+    for idx, (name, df) in enumerate(other_experiments):
+        df = df.sort_values("params_mil", ascending=False)
         color = colors[idx % len(colors)]
         if len(df) == 1:
             plt.scatter(df["params_mil"], df[acc_col], s=100, label=name, color=color, edgecolors='k', zorder=5)

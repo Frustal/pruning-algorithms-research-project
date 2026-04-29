@@ -1,11 +1,12 @@
 import argparse
 import yaml
 import sys
+import torch
 from pathlib import Path
 from src.utils import set_seed, CSVLogger
 from src.data import get_dataloaders
 from src.model import get_model
-from src.methods import default, imp
+from src.methods import default, imp, snip
 
 def main():
     parser = argparse.ArgumentParser()
@@ -34,27 +35,32 @@ def main():
             loaders[k] = list(itertools.islice(loaders[k], 2)) # 2 batches only
 
     # model and logger
-    model = get_model(pretrained=config['model']['pretrained'])
+    model = get_model(model_name=config['model']['name'],pretrained=config['model']['pretrained'])
 
-    checkpoint = config.get('model', {}).get('checkpoint')
+    model_config = config.get('model') or {}
+    checkpoint = model_config.get('checkpoint')
     if checkpoint:
         path = Path(checkpoint)
         if path.exists():
             print(f"Loading existing weights from {path}...")
-            state_dict = torch.load(path, map_location=device)
+            state_dict = torch.load(path, map_location=torch.device(config['training']['device']))
             model.load_state_dict(state_dict)
         else:
             print(f"Warning: Checkpoint {path} not found. Starting from scratch.")
     
     log_dir = Path("output/logs") / config['experiment_name']
-    logger = CSVLogger(log_dir)
-
+    logger_best = CSVLogger(log_dir)
+    log_general_name = "train_history.csv"
+    logger_general = CSVLogger(log_dir,log_general_name)
+    
     # run
     method = config['method']
     if method == 'default':
-        default.run(config, model, loaders, logger)
+        default.run(config, model, loaders, logger_best, logger_general)
     elif method == 'imp':
-        imp.run(config, model, loaders, logger)
+        imp.run(config, model, loaders, logger_best)
+    elif method == 'snip':
+        snip.run(config, model, loaders, logger_best)
     else:
         print(f"Unknown method: {method}")
 

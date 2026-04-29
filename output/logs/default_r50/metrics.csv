@@ -1,0 +1,2 @@
+epoch,val_acc,test_acc,sparsity,params
+50,0.9254901960784314,0.906488859977232,0.0,23717030

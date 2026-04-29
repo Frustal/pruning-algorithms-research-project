@@ -1,0 +1,21 @@
+# --- PyTorch (CUDA 12.1) ---
+--extra-index-url https://download.pytorch.org/whl/cu121
+torch
+torchvision
+
+# --- Data Science & Math ---
+numpy
+pandas
+scipy
+matplotlib
+scikit-learn
+seaborn
+
+# --- Notebooks ---
+ipykernel
+notebook
+
+# --- Utilities ---
+wandb
+pyyaml
+tqdm

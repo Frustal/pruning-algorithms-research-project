@@ -19,10 +19,10 @@ def get_device(device_str=None):
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class CSVLogger:
-    def __init__(self, log_dir):
+    def __init__(self, log_dir, log_name="metrics.csv"):
         self.log_dir = Path(log_dir)
         self.log_dir.mkdir(parents=True, exist_ok=True)
-        self.file_path = self.log_dir / "metrics.csv"
+        self.file_path = self.log_dir / log_name
         self.columns = ["epoch", "val_acc", "test_acc", "sparsity", "params"]
         
         if not self.file_path.exists():
