@@ -13,6 +13,8 @@ def plot_experiments(experiments):
     other_experiments = []
 
     for name in experiments:
+        if "custom" in name:
+            continue
         path = Path(f"output/logs/{name}/metrics.csv")
         if not path.exists(): continue
         
@@ -23,14 +25,32 @@ def plot_experiments(experiments):
         df = df.groupby("params")[acc_col].max().reset_index()
         df["params_mil"] = df["params"] / 1e6
         
-        if name.startswith("default"):
+        df["experiment_name"] = name
+        
+        if name.startswith("default") and "custom" not in name:
             default_dfs.append(df)
         else:
             other_experiments.append((name, df))
 
     if default_dfs:
         default_df = pd.concat(default_dfs).sort_values("params_mil", ascending=False)
-        plt.plot(default_df["params_mil"], default_df[acc_col], marker='o', markersize=6, linestyle='--', color='black', label="Dense Baselines", zorder=5)
+        plt.plot(default_df["params_mil"], default_df[acc_col], marker='o', markersize=6, linestyle='--', color='black', label="Dense Baselines (ResNet)", zorder=5)
+        
+        # Annotate the last dot (EfficientNet)
+        if len(default_df) > 0:
+            last_row = default_df.iloc[-1]
+            # Verify it's actually EfficientNet (or just annotate the last dot as requested)
+            if "effnet" in str(last_row.get("experiment_name", "")):
+                label_text = "EfficientNet-B0"
+            else:
+                label_text = "EfficientNet"
+            plt.annotate(label_text, 
+                         (last_row["params_mil"], last_row[acc_col]),
+                         textcoords="offset points", 
+                         xytext=(0, 10), 
+                         ha='center', 
+                         fontsize=9,
+                         zorder=10)
 
     for idx, (name, df) in enumerate(other_experiments):
         df = df.sort_values("params_mil", ascending=False)
