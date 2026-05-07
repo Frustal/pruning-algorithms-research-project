@@ -6,7 +6,7 @@ This project investigates whether **pruning a large model (ResNet-50)** is funda
 
 ![Pruning Trade-off](final_results.png)
 
-*(Figure 1: Test Accuracy vs. Parameter Count. The black dashed line represents the Dense Baselines (ResNet-18, 34, 50) and includes EfficientNet-B0 as a lightweight baseline. The solid lines show the performance trajectories of IMP and SNIP applied to ResNet-50 across 11 sparsity levels.)*
+*(Figure 1: Test Accuracy vs. Parameter Count. The black dashed line represents the Dense Baselines (ResNet-18, 34, 50), and EfficientNet-B0 is plotted as a separate cross. The solid lines show the performance trajectories of IMP and SNIP applied to ResNet-50 across 11 sparsity levels.)*
 
 ### Critical Analysis of the Results
 1. **Pruning Results**: The plot clearly shows that an Iteratively Pruned ResNet-50 (IMP) can be compressed down to ~3.5M parameters while still maintaining ~89% accuracy. In contrast, the natively trained ResNet-18 (~11M parameters) achieves roughly ~90% accuracy, and the lightweight EfficientNet-B0 (~4.1M parameters) achieves ~92% accuracy. By tracking the parameter counts on the X-axis, we see that the pruned network almost matches the naively downscaled dense models at equivalent sizes.

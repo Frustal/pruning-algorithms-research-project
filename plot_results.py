@@ -27,7 +27,7 @@ def plot_experiments(experiments):
         
         df["experiment_name"] = name
         
-        if name.startswith("default") and "custom" not in name:
+        if name.startswith("default") and "custom" not in name and "effnet" not in name:
             default_dfs.append(df)
         else:
             other_experiments.append((name, df))
@@ -35,27 +35,20 @@ def plot_experiments(experiments):
     if default_dfs:
         default_df = pd.concat(default_dfs).sort_values("params_mil", ascending=False)
         plt.plot(default_df["params_mil"], default_df[acc_col], marker='o', markersize=6, linestyle='--', color='black', label="Dense Baselines (ResNet)", zorder=5)
-        
-        # Annotate the last dot (EfficientNet)
-        if len(default_df) > 0:
-            last_row = default_df.iloc[-1]
-            # Verify it's actually EfficientNet (or just annotate the last dot as requested)
-            if "effnet" in str(last_row.get("experiment_name", "")):
-                label_text = "EfficientNet-B0"
-            else:
-                label_text = "EfficientNet"
-            plt.annotate(label_text, 
-                         (last_row["params_mil"], last_row[acc_col]),
+
+    for idx, (name, df) in enumerate(other_experiments):
+        df = df.sort_values("params_mil", ascending=False)
+        color = colors[idx % len(colors)]
+        if "effnet" in name:
+            plt.scatter(df["params_mil"], df[acc_col], s=50, marker='X', label="EfficientNet-B0", color="lightblue", edgecolors='k', zorder=5)
+            plt.annotate("EfficientNet-B0", 
+                         (df["params_mil"].iloc[0], df[acc_col].iloc[0]),
                          textcoords="offset points", 
                          xytext=(0, 10), 
                          ha='center', 
                          fontsize=9,
                          zorder=10)
-
-    for idx, (name, df) in enumerate(other_experiments):
-        df = df.sort_values("params_mil", ascending=False)
-        color = colors[idx % len(colors)]
-        if len(df) == 1:
+        elif len(df) == 1:
             plt.scatter(df["params_mil"], df[acc_col], s=100, label=name, color=color, edgecolors='k', zorder=5)
         else:
             plt.plot(df["params_mil"], df[acc_col], marker='o', markersize=5, label=name, color=color)
