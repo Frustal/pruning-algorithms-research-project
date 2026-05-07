@@ -6,12 +6,13 @@ This project investigates whether **pruning a large model (ResNet-50)** is funda
 
 ![Pruning Trade-off](final_results.png)
 
-*(Figure 1: Test Accuracy vs. Parameter Count. The black dashed line represents the Dense Baselines (ResNet-18, 34, 50). The solid lines show the performance trajectories of IMP and SNIP applied to ResNet-50 across 11 sparsity levels.)*
+*(Figure 1: Test Accuracy vs. Parameter Count. The black dashed line represents the Dense Baselines (ResNet-18, 34, 50) and includes EfficientNet-B0 as a lightweight baseline. The solid lines show the performance trajectories of IMP and SNIP applied to ResNet-50 across 11 sparsity levels.)*
 
 ### Critical Analysis of the Results
 1. **Pruning Results**: The plot clearly shows that an Iteratively Pruned ResNet-50 (IMP) can be compressed down to ~3.5M parameters while still maintaining ~89% accuracy. In contrast, the natively trained ResNet-18 (~11M parameters) achieves roughly ~90% accuracy. By tracking the parameter counts on the X-axis, we see that the pruned network consistently matches or outperforms the naively downscaled dense models at equivalent sizes.
 2. **Why do Pruned Models Perform So Well?**: The Oxford Flowers-102 dataset is very small (only 1,020 training images). A dense ResNet-50 (25M parameters) is massively overparameterized for this task, which naturally leads to extreme mathematical redundancy and a tendency to overfit (which explains why the mid-sized ResNet-34 actually outperformed it). However, because ResNet-50 starts with massive capacity and highly expressive pretrained features, pruning successfully strips away this redundancy while keeping the crucial feature-extracting weights intact.
 3. **IMP vs. SNIP**: While SNIP is highly efficient (requiring only a single training run per target), it collapses at extreme sparsities (dropping to ~74% accuracy at 3.5M parameters). IMP remains incredibly robust, proving that the iterative retraining is strictly necessary for finding highly compressed sub-networks.
+4. **Custom Architectures**: Also attempted to manually truncate ResNet18 into a custom architecture ([2, 2, 2, 1] blocks). The results were poor: ~45% accuracy, and they are excluded from the main plot to preserve scale, but the data can still be seen in `prev plots/` and `output/` logs.
 
 ### A Note on Unstructured Pruning
 This project utilizes **Unstructured Pruning**. This means individual weights are masked to exactly `0.0` rather than structurally removing entire convolutional channels.
@@ -70,11 +71,13 @@ The project uses `uv` (recommended) or Conda to manage its environment dependenc
 Experiments are managed through YAML configuration files located in the `configs/` directory.
 
 ### 1. Train Dense Baselines
-Establish the "Dense Baselines" curve by training the standard ResNet architectures.
+Establish the "Dense Baselines" curve by training the standard ResNet architectures and EfficientNet-B0.
 ```bash
 python train.py --config configs/default_r18.yaml
 python train.py --config configs/default_r34.yaml
 python train.py --config configs/default_r50.yaml
+python train.py --config configs/default_effnet_b0.yaml
+python train.py --config configs/default_r18_custom.yaml
 ```
 
 ### 2. Run Pruning Algorithms
@@ -88,7 +91,7 @@ python train.py --config configs/snip_r50.yaml
 ### 3. Plotting Results
 Generate a comparative plot of test accuracy versus parameter count.
 ```bash
-python plot_results.py --experiments default_r18 default_r34 default_r50 imp_r50 snip_r50
+python plot_results.py --experiments default_r18 default_r34 default_r50 default_effnet_b0 imp_r50 snip_r50
 ```
 This saves `final_results.png` to the project root.
 
